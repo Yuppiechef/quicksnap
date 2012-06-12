@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Quicksnap by Yuppiechef</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Quicksnap</h1>
+        <p>Quicksnap is a simple clojure state machine</p>
+        <p class="view"><a href="https://github.com/Yuppiechef/quicksnap">View the Project on GitHub <small>Yuppiechef/quicksnap</small></a></p>
+        <ul>
+          <li><a href="https://github.com/Yuppiechef/quicksnap/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/Yuppiechef/quicksnap/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/Yuppiechef/quicksnap">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>quicksnap</h1>
+
+<p>Quicksnap is a simple clojure state machine. The idea is that you can define a path for each state to travel along as a flow definition, then define which functions contain the logic for each of the states to prgress it to the next state. </p>
+
+<p>This idea splits up the notion of the flow graph from the functions that will be involved in actually performing the work.</p>
+
+<h2>Usage</h2>
+
+<p>A simple robot that goes from initial (off?) state, then spins from red to green until it has changed 10 times can be written as follows :</p>
+
+<p>First, we can define our flow as</p>
+
+<div class="highlight">
+<pre><span class="p">(</span><span class="k">def </span><span class="nv">robot-flow</span>
+  <span class="p">(</span><span class="nf">flow</span>
+   <span class="ss">:start</span> <span class="p">[</span><span class="s">"initialize"</span> <span class="ss">:next</span> <span class="ss">:red</span><span class="p">]</span>
+   <span class="ss">:red</span> <span class="p">[</span><span class="s">"next"</span> <span class="ss">:next</span> <span class="ss">:orange</span><span class="p">]</span>
+   <span class="ss">:orange</span> <span class="p">[</span><span class="s">"next"</span> <span class="ss">:next</span> <span class="ss">:green</span><span class="p">]</span>
+   <span class="ss">:green</span> <span class="p">[</span><span class="s">"next"</span> <span class="ss">:next</span> <span class="ss">:red</span><span class="p">]))</span>
+</pre>
+</div>
+
+
+<p>This flow will start at :start as you can imagine, then will bind the :next step to :red and call the function bound to "initialize" (currently unknown). :start will then proceed to :red, :red to :orange, :orange to :green and :green to :red, ad infinitum.</p>
+
+<p>Let's demonstrate setting up our robot</p>
+
+<div class="highlight">
+<pre><span class="p">(</span><span class="kd">defn </span><span class="nv">init-robot</span> <span class="p">[</span><span class="nv">statename</span> <span class="p">{</span><span class="nv">next-fn</span> <span class="ss">:next</span><span class="p">}</span> <span class="nv">session</span><span class="p">]</span>
+  <span class="p">(</span><span class="nb">println </span><span class="s">"Initialize Robot"</span><span class="p">)</span>
+  <span class="p">(</span><span class="nf">next-fn</span> <span class="p">(</span><span class="nb">assoc </span><span class="nv">session</span> <span class="ss">:state</span> <span class="s">"Started"</span> <span class="ss">:cnt</span> <span class="mi">0</span><span class="p">)))</span>
+</pre>
+</div>
+
+
+<p>Not much to it, we accept the current state name, a map of functions to call in order to move forward and a session map that we can modify and pass on to the next function. We'll use the session to keep track of our last state and the change count.</p>
+
+<p>Next up, we need a function for changing the light:</p>
+
+<div class="highlight">
+<pre><span class="p">(</span><span class="kd">defn </span><span class="nv">change-light</span> <span class="p">[</span><span class="nv">statename</span> <span class="p">{</span><span class="nv">next-fn</span> <span class="ss">:next</span><span class="p">}</span> <span class="p">{</span><span class="nv">cnt</span> <span class="ss">:cnt</span> <span class="nv">state</span> <span class="ss">:state</span> <span class="ss">:as</span> <span class="nv">session</span><span class="p">}]</span>
+  <span class="p">(</span><span class="nb">println </span><span class="s">"Next"</span> <span class="nv">statename</span> <span class="s">", from state:"</span> <span class="nv">state</span><span class="p">)</span>
+  <span class="p">(</span><span class="k">if </span><span class="p">(</span><span class="nb">&lt; </span><span class="nv">cnt</span> <span class="mi">10</span><span class="p">)</span>
+    <span class="p">(</span><span class="nf">next-fn</span> <span class="p">(</span><span class="nb">assoc </span><span class="nv">session</span> <span class="ss">:state</span> <span class="nv">statename</span> <span class="ss">:cnt</span> <span class="p">(</span><span class="nb">inc </span><span class="nv">cnt</span><span class="p">)))))</span>
+</pre>
+</div>
+
+
+<p>Here, again, we accept current state, the next functions and destructure our session to use it in our logic.</p>
+
+<p>Now we've got all the pieces.. except the mapping for the flow functions of "initialize" and "next". Straightforward:</p>
+
+<div class="highlight">
+<pre><span class="p">(</span><span class="k">def </span><span class="nv">robot-fns</span>
+  <span class="p">(</span><span class="nf">state-fns</span>
+   <span class="s">"initialize"</span> <span class="o">#</span><span class="ss">'init-robot</span>
+   <span class="s">"next"</span> <span class="o">#</span><span class="ss">'change-light</span><span class="p">))</span>
+</pre>
+</div>
+
+
+<p>A fairly simple binding in this case. The reason for this extra binding step is that it is useful in case your function calls are anonymous or partial kung-fu calls. Mixing that directly into the flow detracts from the flow definition's purpose. </p>
+
+<p>Now we run the machine with a call to</p>
+
+<div class="highlight">
+<pre><span class="p">(</span><span class="nf">run-machine</span> <span class="nv">robot-fns</span> <span class="nv">robot-flow</span><span class="p">)</span>
+</pre>
+</div>
+
+
+<p>And we get our result:</p>
+
+<pre><code>Initialize Robot
+Next :red , old state: Started
+Next :orange , old state: :red
+Next :green , old state: :orange
+Next :red , old state: :green
+Next :orange , old state: :red
+Next :green , old state: :orange
+Next :red , old state: :green
+Next :orange , old state: :red
+Next :green , old state: :orange
+Next :red , old state: :green
+Next :orange , old state: :red
+</code></pre>
+
+<p>I'll leave making it switch state from red -&gt; orange -&gt; green -&gt; red as an exercise to you :)</p>
+
+<p>Notice that you can have multiple outcomes for each state :</p>
+
+<div class="highlight">
+<pre><span class="p">(</span><span class="k">def </span><span class="nv">robot-flow</span>
+  <span class="p">(</span><span class="nf">flow</span>
+   <span class="ss">:start</span> <span class="p">[</span><span class="s">"initialize"</span> <span class="ss">:next</span> <span class="ss">:red</span><span class="p">]</span>
+   <span class="ss">:red</span> <span class="p">[</span><span class="s">"next"</span>
+         <span class="ss">:next</span> <span class="ss">:orange</span>
+         <span class="ss">:finished</span> <span class="ss">:done</span><span class="p">]</span>
+   <span class="ss">:orange</span> <span class="p">[</span><span class="s">"next"</span>
+            <span class="ss">:next</span> <span class="ss">:green</span>
+            <span class="ss">:finished</span> <span class="ss">:done</span><span class="p">]</span>
+   <span class="ss">:green</span> <span class="p">[</span><span class="s">"next"</span>
+           <span class="ss">:next</span> <span class="ss">:red</span>
+           <span class="ss">:finished</span> <span class="ss">:done</span><span class="p">]</span>
+   <span class="ss">:done</span> <span class="p">[</span><span class="s">"finished"</span><span class="p">]))</span>
+</pre>
+</div>
+
+
+<p>Check the quicksnap/sample.clj for the rest of the implementation for this.</p>
+
+<p><em>Please note:</em> This example blows the stack. I'm trying to decide how to handle the stack gracefully, so any input is welcome! My first thought was to use trampoline, but I'm not enitrely convinced this is how it should be done...</p>
+
+<h2>License</h2>
+
+<p>Copyright (C) 2012 Yuppiechef (pty) ltd.</p>
+
+<p>Distributed under the Eclipse Public License, the same as Clojure.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/Yuppiechef">Yuppiechef</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
