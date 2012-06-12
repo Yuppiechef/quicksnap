@@ -100,6 +100,6 @@ Check the quicksnap/sample.clj for the rest of the implementation for this.
 
 ## License
 
-Copyright (C) 2012 Yuppiechef (pty) ltd.
+Copyright (C) 2012 Yuppiechef Online (pty) ltd.
 
 Distributed under the Eclipse Public License, the same as Clojure.
