@@ -1,18 +1,18 @@
 (ns quicksnap.sample
   (:use [quicksnap.core]))
 
-(defn init-robot [statename {next-fn :next} session]
+(defn init-robot [{next-fn :next} {statename :quicksnap.core/statename :as session}]
   (println "Initialize Robot")
   (next-fn (assoc session :state "Started" :cnt 0)))
 
-(defn change-light [statename {next-fn :next done-fn :finished} {cnt :cnt state :state :as session}]
+(defn change-light [{next-fn :next done-fn :finished} {statename :quicksnap.core/statename cnt :cnt state :state :as session}]
   (println "Next" statename ", from state:" state)
   (let [next-session (assoc session :state statename :cnt (inc cnt))]
     (if (< cnt 10)
       (next-fn next-session)
       (done-fn next-session))))
 
-(defn stop-robot [statename _ {state :state}]
+(defn stop-robot [_ {statename :quicksnap.core/statename state :state}]
   (println "Finished at" state))
 
 (def robot-fns
@@ -35,4 +35,4 @@
            :finished :done]
    :done ["finished"]))
 
-(run-machine robot-fns robot-flow)
+(start-machine :start robot-fns robot-flow :debug-fn #'println)
