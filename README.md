@@ -24,7 +24,7 @@ This flow will start at :start as you can imagine, then will bind the :next step
 Let's demonstrate setting up our robot
 
 ```clojure
-(defn init-robot [statename {next-fn :next} session]
+(defn init-robot [{next-fn :next} session]
   (println "Initialize Robot")
   (next-fn (assoc session :state "Started" :cnt 0)))
 ```
@@ -34,7 +34,7 @@ Not much to it, we accept the current state name, a map of functions to call in 
 Next up, we need a function for changing the light:
 
 ```clojure
-(defn change-light [statename {next-fn :next} {cnt :cnt state :state :as session}]
+(defn change-light [{next-fn :next} {cnt :cnt state :state statename :quicksnap/statename :as session}]
   (println "Next" statename ", from state:" state)
   (if (< cnt 10)
     (next-fn (assoc session :state statename :cnt (inc cnt)))))
@@ -55,7 +55,7 @@ A fairly simple binding in this case. The reason for this extra binding step is 
 
 Now we run the machine with a call to
 ```clojure
-(run-machine robot-fns robot-flow)
+(start-machine :start robot-fns robot-flow)
 ```
 
 And we get our result:
@@ -96,7 +96,7 @@ Notice that you can have multiple outcomes for each state :
 
 Check the quicksnap/sample.clj for the rest of the implementation for this.
 
-*Please note:* This example blows the stack. I'm trying to decide how to handle the stack gracefully, so any input is welcome! My first thought was to use trampoline, but I'm not enitrely convinced this is how it should be done...
+*Please note:* This example blows the stack if you just let it run a while. I'm trying to decide how to handle the stack gracefully, so any input is welcome! My first thought was to use trampoline, but I'm not enitrely convinced this is how it should be done...
 
 ## License
 
