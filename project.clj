@@ -1,3 +1,3 @@
-(defproject com.yuppiechef/quicksnap "1.0.1-SNAPSHOT"
+(defproject com.yuppiechef/quicksnap "1.0.2-SNAPSHOT"
   :description "FIXME: write description"
-  :dependencies [[org.clojure/clojure "1.3.0"]])
+  :dependencies [[org.clojure/clojure "1.4.0"]])

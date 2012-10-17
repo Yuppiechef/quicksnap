@@ -17,7 +17,8 @@
     (debug-fn "Checking state" state fns flow session args))
   
   (if-let [next-flow (flow state)]
-    (let [next-fn (fns (first next-flow))
+    (let [flowname (first next-flow)
+          next-fn (if (string? flowname) (fns flowname) flowname)
           next-states (apply hash-map (rest next-flow))
           fnmap (into {}
                       (map
