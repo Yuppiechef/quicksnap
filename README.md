@@ -1,4 +1,4 @@
-# quicksnap
+# quicksnap Archived
 
 Quicksnap is a simple clojure state machine. The idea is that you can define a path for each state to travel along as a flow definition, then define which functions contain the logic for each of the states to prgress it to the next state. 
 
